@@ -1,0 +1,29 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: myco
+      POSTGRES_PASSWORD: local_dev_password_change_me
+      POSTGRES_DB: myco
+    volumes:
+      - myco_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U myco -d myco"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+  web:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      APP_ENV: development
+      DATABASE_URL: postgresql+psycopg://myco:local_dev_password_change_me@postgres:5432/myco
+      PUBLIC_APP_URL: http://localhost:8000
+    ports:
+      - "8000:8000"
+volumes:
+  myco_data:
